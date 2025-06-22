@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IND Token Generator</title>
   <style>
     body {
@@ -10,11 +11,22 @@
       color: #eee;
       text-align: center;
       padding: 20px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    h2 {
+      color: #00b67a;
     }
     input[type="file"], select {
       margin-top: 10px;
       margin-bottom: 20px;
-      padding: 5px;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #1e1e1e;
+      color: #eee;
     }
     button {
       padding: 10px 20px;
@@ -22,11 +34,43 @@
       color: white;
       font-weight: bold;
       border: none;
+      border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #009c66;
     }
     #status {
       margin-top: 15px;
       color: #0af;
+      font-weight: bold;
+    }
+    #consoleBox {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #ddd;
+      flex-grow: 1;
+    }
+    .console-error {
+      color: #ff5555;
+    }
+    .console-warning {
+      color: #ffaa55;
+    }
+    .console-success {
+      color: #55ff55;
+    }
+    .console-info {
+      color: #55aaff;
     }
   </style>
 </head>
@@ -43,8 +87,18 @@
   <br>
   <button onclick="handleFile()">Generate & Download</button>
   <div id="status">Status: Waiting for upload...</div>
+  <div id="consoleBox"></div>
 
   <script>
+    function logToConsole(message, type = 'info') {
+      const consoleBox = document.getElementById('consoleBox');
+      const logEntry = document.createElement('div');
+      logEntry.className = `console-${type}`;
+      logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      consoleBox.appendChild(logEntry);
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
     async function handleFile() {
       const fileInput = document.getElementById('jsonFile');
       const regionSelect = document.getElementById('regionSelect');
@@ -52,11 +106,13 @@
 
       if (!fileInput.files.length) {
         status.innerText = '❌ Please upload a JSON file.';
+        logToConsole('No JSON file uploaded.', 'error');
         return;
       }
 
       if (!regionSelect.value) {
         status.innerText = '❌ Please select a region.';
+        logToConsole('No region selected.', 'error');
         return;
       }
 
@@ -67,71 +123,88 @@
         let accounts;
         try {
           accounts = JSON.parse(e.target.result);
+          logToConsole('JSON file parsed successfully.', 'success');
         } catch (err) {
           status.innerText = '❌ Invalid JSON format.';
+          logToConsole(`JSON Parsing Error: ${err.message}`, 'error');
+          return;
+        }
+
+        if (!Array.isArray(accounts)) {
+          status.innerText = '❌ JSON must be an array of accounts.';
+          logToConsole('Input JSON is not an array.', 'error');
           return;
         }
 
         status.innerText = '🔄 Generating tokens...';
+        logToConsole(`Processing ${accounts.length} accounts for region ${regionSelect.value}...`, 'info');
         const results = [];
 
         for (const acc of accounts) {
           // Validate input JSON has required fields
-          if (!acc.uid || !acc.password || !acc.region) {
-            console.log(`UID: ${acc.uid || 'undefined'}, Password: ${acc.password || 'undefined'} - Missing required fields (uid, password, or region)`);
-            continue;
-          }
+          const missingFields = [];
+          if (!acc.uid) missingFields.push('uid');
+          if (!acc.password) missingFields.push('password');
 
-          // Check input region
-          if (acc.region !== regionSelect.value) {
-            console.log(`UID: ${acc.uid}, Password: ${acc.password} - Input region (${acc.region}) does not match selected region (${regionSelect.value})`);
+          if (missingFields.length > 0) {
+            logToConsole(`UID: ${acc.uid || 'undefined'}, Password: ${acc.password || 'undefined'} - Missing fields: ${missingFields.join(', ')}. JSON: ${JSON.stringify(acc)}`, 'error');
             continue;
           }
 
           const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
           try {
             const res = await fetch(url);
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
             const data = await res.json();
             if (data.token && data.region === regionSelect.value) {
               results.push({ 
                 token: data.token,
                 uid: acc.uid,
                 region: data.region,
-                server_url: data.server_url || acc.server_url || 'unknown'
+                server_url: data.server_url || 'unknown'
               });
               status.innerText = `✅ Token fetched for UID ${acc.uid}`;
+              logToConsole(`Token fetched for UID ${acc.uid}`, 'success');
             } else {
               if (data.region !== regionSelect.value) {
-                console.log(`UID: ${acc.uid} - API response region (${data.region}) does not match selected region (${regionSelect.value})`);
+                logToConsole(`UID: ${acc.uid} - API region (${data.region || 'undefined'}) does not match selected region (${regionSelect.value})`, 'warning');
               } else {
-                console.log(`UID: ${acc.uid} - No token received from API`);
+                logToConsole(`UID: ${acc.uid} - No token received. API response: ${JSON.stringify(data)}`, 'warning');
               }
               results.push({ token: null, uid: acc.uid });
               status.innerText = `⚠️ Failed for UID ${acc.uid}`;
             }
           } catch (e) {
-            console.log(`UID: ${acc.uid} - API error: ${e.message}`);
+            logToConsole(`UID: ${acc.uid} - API error: ${e.message}. URL: ${url}`, 'error');
             results.push({ token: null, uid: acc.uid });
             status.innerText = `⚠️ Error for UID ${acc.uid}`;
           }
           await new Promise(r => setTimeout(r, 500));
         }
 
-        if (results.length === 0) {
+        if (results.length === 0 || results.every(r => !r.token)) {
           status.innerText = '❌ No valid tokens generated.';
+          logToConsole('No valid tokens generated.', 'error');
           return;
         }
 
-        const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
+        const validResults = results.filter(r => r.token);
+        const blob = new Blob([JSON.stringify(validResults, null, 2)], { type: "application/json" });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = `ind_tokens_${regionSelect.value}.json`;
         a.click();
         status.innerText = `✅ Done! ind_tokens_${regionSelect.value}.json downloaded.`;
+        logToConsole(`Downloaded ind_tokens_${regionSelect.value}.json with ${validResults.length} tokens.`, 'success');
       };
 
       reader.readAsText(file);
     }
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>
