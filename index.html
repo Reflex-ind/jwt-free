@@ -1,188 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IND Token Generator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Token Uploader</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #eee;
-      text-align: center;
-      padding: 20px;
+    * {
+      box-sizing: border-box;
+      padding: 0;
       margin: 0;
-      display: flex;
-      flex-direction: column;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #10131f, #1b2233);
+      color: #f0f0f0;
       min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
     }
+
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+      animation: fadeIn 0.8s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     h2 {
-      color: #00b67a;
+      font-size: 26px;
+      margin-bottom: 25px;
+      color: #7de2fc;
+      background: -webkit-linear-gradient(45deg, #7de2fc, #b9b6e5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    input[type="file"], select {
-      margin-top: 10px;
+
+    select, input[type="file"] {
+      width: 100%;
       margin-bottom: 20px;
-      padding: 8px;
-      border-radius: 5px;
-      border: 1px solid #333;
-      background: #1e1e1e;
-      color: #eee;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #00b67a;
-      color: white;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    button:hover {
-      background-color: #009c66;
-    }
-    #status {
-      margin-top: 15px;
-      color: #0af;
-      font-weight: bold;
-    }
-    #consoleBox {
-      background: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 5px;
-      padding: 10px;
-      margin-top: 20px;
-      max-height: 200px;
-      overflow-y: auto;
-      text-align: left;
-      font-family: 'Courier New', monospace;
+      padding: 12px;
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
       font-size: 14px;
-      color: #ddd;
-      flex-grow: 1;
     }
-    .console-error { color: #ff5555; }
-    .console-warning { color: #ffaa55; }
-    .console-success { color: #55ff55; }
-    .console-info { color: #55aaff; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(90deg, #00ffcc, #0099ff);
+      color: #000;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      filter: brightness(1.1);
+      transform: scale(1.01);
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 14px;
+      text-align: center;
+      color: #88f;
+    }
+
+    .console {
+      margin-top: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 150px;
+      overflow-y: auto;
+      color: #ccc;
+    }
+
+    .log-error { color: #ff7b7b; }
+    .log-success { color: #88ff88; }
+    .log-info { color: #7bd7ff; }
   </style>
 </head>
 <body>
-  <h2>📂 Upload UID/Password JSON → Get Token JSON</h2>
-  <select id="regionSelect">
-    <option value="">Select Region</option>
-    <option value="IND">India (IND)</option>
-    <option value="NA">North America (NA)</option>
-    <option value="RU">Russia (RU)</option>
-  </select>
-  <br>
-  <input type="file" id="jsonFile" accept=".json" />
-  <br>
-  <button onclick="handleFile()">Generate & Download</button>
-  <div id="status">Status: Waiting for upload...</div>
-  <div id="consoleBox"></div>
+
+  <div class="card">
+    <h2>Upload Accounts & Generate Tokens</h2>
+    <select id="region">
+      <option value="">🌎 Select Region</option>
+      <option value="IND">India</option>
+      <option value="NA">North America</option>
+      <option value="RU">Russia</option>
+    </select>
+    <input type="file" id="fileInput" accept=".json" />
+    <button onclick="generateTokens()">🚀 Generate Tokens</button>
+    <div id="status">Status: Awaiting file input...</div>
+    <div class="console" id="console"></div>
+  </div>
 
   <script>
-    function logToConsole(message, type = 'info') {
-      const consoleBox = document.getElementById('consoleBox');
-      const logEntry = document.createElement('div');
-      logEntry.className = `console-${type}`;
-      logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-      consoleBox.appendChild(logEntry);
-      consoleBox.scrollTop = consoleBox.scrollHeight;
-    }
+    const log = (msg, type = "info") => {
+      const line = document.createElement("div");
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      line.classList.add(`log-${type}`);
+      document.getElementById("console").appendChild(line);
+    };
 
-    async function handleFile() {
-      const fileInput = document.getElementById('jsonFile');
-      const regionSelect = document.getElementById('regionSelect');
-      const status = document.getElementById('status');
+    async function generateTokens() {
+      const region = document.getElementById("region").value;
+      const file = document.getElementById("fileInput").files[0];
+      const status = document.getElementById("status");
+      const consoleBox = document.getElementById("console");
+      consoleBox.innerHTML = "";
 
-      if (!fileInput.files.length) {
-        status.innerText = '❌ Please upload a JSON file.';
-        logToConsole('No JSON file uploaded.', 'error');
+      if (!file) {
+        status.textContent = "❌ Please select a file.";
+        log("No file selected", "error");
         return;
       }
 
-      if (!regionSelect.value) {
-        status.innerText = '❌ Please select a region.';
-        logToConsole('No region selected.', 'error');
+      if (!region) {
+        status.textContent = "❌ Please select a region.";
+        log("Region not selected", "error");
         return;
       }
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+      status.textContent = "🔄 Reading file...";
+      let accounts = [];
+      try {
+        const text = await file.text();
+        accounts = JSON.parse(text);
+        if (!Array.isArray(accounts)) throw new Error("Not an array");
+        log(`Parsed ${accounts.length} accounts`, "success");
+      } catch (e) {
+        status.textContent = "❌ Invalid JSON.";
+        log("Invalid JSON: " + e.message, "error");
+        return;
+      }
 
-      reader.onload = async function (e) {
-        let accounts;
+      const result = [];
+      status.textContent = "⚙️ Generating tokens...";
+      for (const acc of accounts) {
+        if (!acc.uid || !acc.password) {
+          log(`Missing UID or password in: ${JSON.stringify(acc)}`, "error");
+          continue;
+        }
+
         try {
-          accounts = JSON.parse(e.target.result);
-          logToConsole('JSON file parsed successfully.', 'success');
-        } catch (err) {
-          status.innerText = '❌ Invalid JSON format.';
-          logToConsole(`JSON Parsing Error: ${err.message}`, 'error');
-          return;
-        }
-
-        if (!Array.isArray(accounts)) {
-          status.innerText = '❌ JSON must be an array of accounts.';
-          logToConsole('Input JSON is not an array.', 'error');
-          return;
-        }
-
-        status.innerText = '🔄 Generating tokens...';
-        logToConsole(`Processing ${accounts.length} accounts for region ${regionSelect.value}...`, 'info');
-        const results = [];
-
-        for (const acc of accounts) {
-          const missingFields = [];
-          if (!acc.uid) missingFields.push('uid');
-          if (!acc.password) missingFields.push('password');
-
-          if (missingFields.length > 0) {
-            logToConsole(`Missing fields for UID ${acc.uid || 'undefined'}: ${missingFields.join(', ')}`, 'error');
-            continue;
-          }
-
           const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
-          try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            const data = await res.json();
-
-            if (data.token && data.region === regionSelect.value) {
-              results.push({ token: data.token });  // ✅ push as object
-              status.innerText = `✅ Token fetched for UID ${acc.uid}`;
-              logToConsole(`Token fetched for UID ${acc.uid}`, 'success');
-            } else {
-              logToConsole(`UID ${acc.uid} - Token fetch failed or region mismatch.`, 'warning');
-              status.innerText = `⚠️ Failed for UID ${acc.uid}`;
-            }
-          } catch (e) {
-            logToConsole(`UID: ${acc.uid} - API error: ${e.message}`, 'error');
-            status.innerText = `⚠️ Error for UID ${acc.uid}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data.token && data.region === region) {
+            result.push({ token: data.token });
+            log(`Token OK: UID ${acc.uid}`, "success");
+          } else {
+            log(`Fail for UID ${acc.uid}: Region mismatch or no token`, "error");
           }
-
-          await new Promise(r => setTimeout(r, 500)); // throttle requests
+        } catch (err) {
+          log(`Error fetching for UID ${acc.uid}: ${err.message}`, "error");
         }
 
-        if (results.length === 0) {
-          status.innerText = '❌ No valid tokens generated.';
-          logToConsole('No valid tokens generated.', 'error');
-          return;
-        }
+        await new Promise(r => setTimeout(r, 300));
+      }
 
-        const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `tokens_${regionSelect.value}.json`;
-        a.click();
+      if (result.length === 0) {
+        status.textContent = "❌ No tokens generated.";
+        log("No valid tokens", "error");
+        return;
+      }
 
-        status.innerText = `✅ Done! tokens_${regionSelect.value}.json downloaded.`;
-        logToConsole(`Downloaded tokens_${regionSelect.value}.json with ${results.length} tokens.`, 'success');
-      };
+      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `tokens_${region}.json`;
+      a.click();
 
-      reader.readAsText(file);
+      status.textContent = `✅ Downloaded ${result.length} tokens.`;
+      log("Download complete", "success");
     }
   </script>
+
 </body>
 </html>
-
