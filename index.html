@@ -2,202 +2,221 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Token Uploader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NextGen Token UI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --primary: #00ffc3;
+      --secondary: #006eff;
+      --background: #090e1a;
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --blur-bg: rgba(255, 255, 255, 0.09);
+      --border: rgba(255, 255, 255, 0.2);
+      --combo-bg: #1c2333;
+      --combo-hover: #2c3650;
+      --text-color: #ffffff;
+    }
+
     * {
       box-sizing: border-box;
-      padding: 0;
       margin: 0;
+      padding: 0;
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #10131f, #1b2233);
-      color: #f0f0f0;
-      min-height: 100vh;
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(ellipse at top, #0d1222, #05070e);
+      color: var(--text-color);
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 40px;
+      min-height: 100vh;
+      padding: 2rem;
+      overflow: hidden;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 24px;
-      padding: 40px;
+    .glass-card {
       width: 100%;
-      max-width: 500px;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
-      animation: fadeIn 0.8s ease;
+      max-width: 620px;
+      padding: 3rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 255, 196, 0.08);
+      animation: slideUpFade 0.7s ease-out;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
+    @keyframes slideUpFade {
+      from { opacity: 0; transform: translateY(40px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    h2 {
-      font-size: 26px;
-      margin-bottom: 25px;
-      color: #7de2fc;
-      background: -webkit-linear-gradient(45deg, #7de2fc, #b9b6e5);
+    h1 {
+      font-size: 30px;
+      text-align: center;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-bottom: 2rem;
     }
 
     select, input[type="file"] {
       width: 100%;
-      margin-bottom: 20px;
-      padding: 12px;
-      border-radius: 10px;
-      background-color: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #fff;
-      font-size: 14px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 12px;
+      background: var(--combo-bg);
+      border: 1px solid var(--border);
+      color: var(--text-color);
+      font-size: 15px;
+      outline: none;
+      transition: all 0.3s ease;
+      appearance: none;
+    }
+
+    select option {
+      background: var(--combo-bg);
+      color: var(--text-color);
+    }
+
+    select:hover, input[type="file"]:hover {
+      background-color: var(--combo-hover);
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      background: linear-gradient(90deg, #00ffcc, #0099ff);
-      color: #000;
-      font-weight: 600;
+      padding: 1rem;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      color: black;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
     button:hover {
-      filter: brightness(1.1);
-      transform: scale(1.01);
+      transform: scale(1.05);
+      box-shadow: 0 0 15px var(--primary);
     }
 
     #status {
-      margin-top: 20px;
+      margin-top: 1.2rem;
       font-size: 14px;
       text-align: center;
-      color: #88f;
+      color: var(--primary);
     }
 
     .console {
-      margin-top: 20px;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 12px;
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background: var(--blur-bg);
+      border-radius: 12px;
+      height: 160px;
+      overflow-y: auto;
       font-family: monospace;
       font-size: 13px;
-      max-height: 150px;
-      overflow-y: auto;
       color: #ccc;
+      animation: fadeInConsole 1s ease-in;
     }
 
-    .log-error { color: #ff7b7b; }
-    .log-success { color: #88ff88; }
-    .log-info { color: #7bd7ff; }
+    @keyframes fadeInConsole {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .success { color: #00ffb8; }
+    .error { color: #ff5c5c; }
+    .info { color: #7fcaff; }
   </style>
 </head>
 <body>
-
-  <div class="card">
-    <h2>Upload Accounts & Generate Tokens</h2>
+  <div class="glass-card">
+    <h1>🧊 Token Generator v2</h1>
     <select id="region">
-      <option value="">🌎 Select Region</option>
+      <option value="">🌍 Select Region</option>
       <option value="IND">India</option>
       <option value="NA">North America</option>
       <option value="RU">Russia</option>
     </select>
-    <input type="file" id="fileInput" accept=".json" />
+    <input type="file" id="fileInput" accept=".json">
     <button onclick="generateTokens()">🚀 Generate Tokens</button>
-    <div id="status">Status: Awaiting file input...</div>
+    <div id="status">Waiting for upload...</div>
     <div class="console" id="console"></div>
   </div>
 
   <script>
-    const log = (msg, type = "info") => {
-      const line = document.createElement("div");
-      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      line.classList.add(`log-${type}`);
-      document.getElementById("console").appendChild(line);
-    };
+    function log(msg, type = 'info') {
+      const el = document.createElement('div');
+      el.className = type;
+      el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      document.getElementById('console').appendChild(el);
+    }
 
     async function generateTokens() {
-      const region = document.getElementById("region").value;
-      const file = document.getElementById("fileInput").files[0];
-      const status = document.getElementById("status");
-      const consoleBox = document.getElementById("console");
+      const region = document.getElementById('region').value;
+      const file = document.getElementById('fileInput').files[0];
+      const status = document.getElementById('status');
+      const consoleBox = document.getElementById('console');
       consoleBox.innerHTML = "";
 
-      if (!file) {
-        status.textContent = "❌ Please select a file.";
-        log("No file selected", "error");
-        return;
-      }
+      if (!file) return status.textContent = "❌ Please select a JSON file.";
+      if (!region) return status.textContent = "❌ Please choose a region.";
 
-      if (!region) {
-        status.textContent = "❌ Please select a region.";
-        log("Region not selected", "error");
-        return;
-      }
-
-      status.textContent = "🔄 Reading file...";
-      let accounts = [];
+      let accounts;
       try {
-        const text = await file.text();
-        accounts = JSON.parse(text);
-        if (!Array.isArray(accounts)) throw new Error("Not an array");
-        log(`Parsed ${accounts.length} accounts`, "success");
+        accounts = JSON.parse(await file.text());
+        if (!Array.isArray(accounts)) throw new Error('Expected array');
+        log(`Parsed ${accounts.length} accounts`, 'success');
       } catch (e) {
-        status.textContent = "❌ Invalid JSON.";
-        log("Invalid JSON: " + e.message, "error");
+        status.textContent = "❌ Invalid JSON format.";
+        log("JSON Error: " + e.message, 'error');
         return;
       }
 
-      const result = [];
       status.textContent = "⚙️ Generating tokens...";
+      const results = [];
+
       for (const acc of accounts) {
         if (!acc.uid || !acc.password) {
-          log(`Missing UID or password in: ${JSON.stringify(acc)}`, "error");
+          log(`Skipping invalid entry: ${JSON.stringify(acc)}`, 'error');
           continue;
         }
 
         try {
-          const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
-          const res = await fetch(url);
+          const res = await fetch(`https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`);
           const data = await res.json();
-          if (data.token && data.region === region) {
-            result.push({ token: data.token });
-            log(`Token OK: UID ${acc.uid}`, "success");
-          } else {
-            log(`Fail for UID ${acc.uid}: Region mismatch or no token`, "error");
-          }
-        } catch (err) {
-          log(`Error fetching for UID ${acc.uid}: ${err.message}`, "error");
-        }
 
+          if (data.token && data.region === region) {
+            results.push({ token: data.token });
+            log(`✔ Token OK for UID ${acc.uid}`, 'success');
+          } else {
+            log(`✖ No token or wrong region for UID ${acc.uid}`, 'error');
+          }
+        } catch (e) {
+          log(`API error for ${acc.uid}: ${e.message}`, 'error');
+        }
         await new Promise(r => setTimeout(r, 300));
       }
 
-      if (result.length === 0) {
+      if (!results.length) {
         status.textContent = "❌ No tokens generated.";
-        log("No valid tokens", "error");
+        log("No tokens to export.", 'error');
         return;
       }
 
-      const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
+      const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `tokens_${region}.json`;
       a.click();
 
-      status.textContent = `✅ Downloaded ${result.length} tokens.`;
-      log("Download complete", "success");
+      status.textContent = `✅ ${results.length} tokens downloaded.`;
+      log("Download complete.", 'success');
     }
   </script>
-
 </body>
 </html>
