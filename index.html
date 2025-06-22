@@ -146,11 +146,16 @@
     <input type="file" id="fileInput" accept=".json">
     <button onclick="generateTokens()">🚀 Generate Tokens</button>
     <button onclick="downloadRegionWise()">📁 Download Region-wise JSONs</button>
+    <button id="downloadValidAccounts" style="display: none;" onclick="downloadValid()">✅ Download Valid Accounts (UID+Pass)</button>
+    <button id="downloadValidRegionAccounts" style="display: none;" onclick="downloadValidRegion()">🌐 Download Region Valid Accounts</button>
     <div id="status">Waiting for upload...</div>
     <div class="console" id="console"></div>
   </div>
 
   <script>
+    let validAccounts = [];
+    let validAccountsRegionMap = {};
+
     function log(msg, type = 'info') {
       const el = document.createElement('div');
       el.className = type;
@@ -164,6 +169,7 @@
       const status = document.getElementById('status');
       const consoleBox = document.getElementById('console');
       consoleBox.innerHTML = "";
+      document.getElementById('downloadValidAccounts').style.display = 'none';
 
       if (!file) return status.textContent = "❌ Please select a JSON file.";
       if (!region) return status.textContent = "❌ Please choose a region.";
@@ -181,6 +187,7 @@
 
       status.textContent = "⚙️ Generating tokens...";
       const results = [];
+      validAccounts = [];
 
       for (const acc of accounts) {
         if (!acc.uid || !acc.password) {
@@ -194,6 +201,7 @@
 
           if (data.token && data.region === region) {
             results.push({ token: data.token });
+            validAccounts.push({ uid: acc.uid, password: acc.password });
             log(`✔ Token OK for UID ${acc.uid}`, 'success');
           } else {
             log(`✖ No token or wrong region for UID ${acc.uid}`, 'error');
@@ -218,6 +226,7 @@
 
       status.textContent = `✅ ${results.length} tokens downloaded.`;
       log("Download complete.", 'success');
+      document.getElementById('downloadValidAccounts').style.display = 'block';
     }
 
     async function downloadRegionWise() {
@@ -225,6 +234,7 @@
       const status = document.getElementById('status');
       const consoleBox = document.getElementById('console');
       consoleBox.innerHTML = "";
+      document.getElementById('downloadValidRegionAccounts').style.display = 'none';
 
       if (!file) return status.textContent = "❌ Please select a JSON file.";
 
@@ -242,6 +252,7 @@
       status.textContent = "⚙️ Generating tokens for all regions...";
       const SUPPORTED_REGIONS = ["IND", "BR", "SG", "RU", "ID", "TW", "US", "VN", "TH", "ME", "PK", "CIS", "BD", "NA", "SAC", "EU"];
       const regionMap = {};
+      validAccountsRegionMap = {};
 
       for (const acc of accounts) {
         if (!acc.uid || !acc.password) {
@@ -255,7 +266,11 @@
 
           if (data.token && SUPPORTED_REGIONS.includes(data.region)) {
             if (!regionMap[data.region]) regionMap[data.region] = [];
+            if (!validAccountsRegionMap[data.region]) validAccountsRegionMap[data.region] = [];
+
             regionMap[data.region].push({ token: data.token });
+            validAccountsRegionMap[data.region].push({ uid: acc.uid, password: acc.password });
+
             log(`✔ Token OK for UID ${acc.uid} [${data.region}]`, 'success');
           } else {
             log(`✖ No token or unsupported region for UID ${acc.uid}`, 'error');
@@ -283,7 +298,39 @@
 
       status.textContent = `✅ Downloaded ${Object.keys(regionMap).length} region JSON files.`;
       log("All region-wise files downloaded.", 'success');
+      document.getElementById('downloadValidRegionAccounts').style.display = 'block';
+    }
+
+    function downloadValid() {
+      if (!validAccounts.length) {
+        log("No valid accounts to download.", 'error');
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(validAccounts, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `valid_accounts.json`;
+      a.click();
+      log("Downloaded valid accounts JSON.", 'success');
+    }
+
+    function downloadValidRegion() {
+      if (!Object.keys(validAccountsRegionMap).length) {
+        log("No valid region accounts to download.", 'error');
+        return;
+      }
+
+      for (const region of Object.keys(validAccountsRegionMap)) {
+        const blob = new Blob([JSON.stringify(validAccountsRegionMap[region], null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${region.toLowerCase()}_valid_accounts.json`;
+        a.click();
+        log(`⬇ Downloaded valid accounts for ${region}`, 'info');
+      }
     }
   </script>
 </body>
 </html>
+
