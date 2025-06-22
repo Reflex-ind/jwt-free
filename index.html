@@ -2,33 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Token Generator - Gamerz MGR</title>
+  <title>IND Token Generator</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       background: #121212;
       color: #eee;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      text-align: center;
       padding: 20px;
     }
-    textarea {
-      width: 90%;
-      height: 200px;
-      background: #1e1e1e;
-      color: #0f0;
-      border: 1px solid #444;
-      margin-bottom: 15px;
-      padding: 10px;
-      font-family: monospace;
+    input[type="file"] {
+      margin-top: 10px;
+      margin-bottom: 20px;
     }
     button {
       padding: 10px 20px;
-      background: #00d07e;
-      border: none;
+      background-color: #00b67a;
       color: white;
       font-weight: bold;
+      border: none;
       cursor: pointer;
     }
     #status {
@@ -38,53 +30,67 @@
   </style>
 </head>
 <body>
-  <h2>🔐 IND Token Generator (JSON to Token)</h2>
-  <textarea id="inputJson" placeholder='Paste [{"uid": "...", "password": "..."}]'></textarea>
-  <button onclick="generateTokens()">Generate & Download</button>
-  <div id="status">Status: Idle</div>
+  <h2>📂 Upload UID/Password JSON → Get Token JSON</h2>
+  <input type="file" id="jsonFile" accept=".json" />
+  <br>
+  <button onclick="handleFile()">Generate & Download</button>
+  <div id="status">Status: Waiting for upload...</div>
 
   <script>
-    async function generateTokens() {
-      const input = document.getElementById("inputJson").value;
-      const status = document.getElementById("status");
-      let accounts;
+    async function handleFile() {
+      const fileInput = document.getElementById('jsonFile');
+      const status = document.getElementById('status');
 
-      try {
-        accounts = JSON.parse(input);
-      } catch (err) {
-        status.innerText = "❌ Invalid JSON!";
+      if (!fileInput.files.length) {
+        status.innerText = '❌ Please upload a JSON file.';
         return;
       }
 
-      const results = [];
-      status.innerText = "🔄 Generating tokens...";
+      const file = fileInput.files[0];
+      const reader = new FileReader();
 
-      for (const acc of accounts) {
-        const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
+      reader.onload = async function (e) {
+        let accounts;
         try {
-          const res = await fetch(url);
-          const data = await res.json();
-          if (data.token) {
-            results.push({ token: data.token });
-            status.innerText = `✅ Token added for UID ${acc.uid}`;
-          } else {
-            results.push({ token: null });
-            status.innerText = `⚠️ Failed for UID ${acc.uid}`;
-          }
-        } catch (e) {
-          results.push({ token: null });
-          status.innerText = `⚠️ Error for UID ${acc.uid}`;
+          accounts = JSON.parse(e.target.result);
+        } catch (err) {
+          status.innerText = '❌ Invalid JSON format.';
+          return;
         }
-        await new Promise(r => setTimeout(r, 500)); // slow down to avoid rate limit
-      }
 
-      const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "ind_tokens.json";
-      link.click();
-      status.innerText = "✅ Done! Download started.";
+        status.innerText = '🔄 Generating tokens...';
+        const results = [];
+
+        for (const acc of accounts) {
+          const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
+          try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.token) {
+              results.push({ token: data.token });
+              status.innerText = `✅ Token fetched for UID ${acc.uid}`;
+            } else {
+              results.push({ token: null });
+              status.innerText = `⚠️ Failed for UID ${acc.uid}`;
+            }
+          } catch (e) {
+            results.push({ token: null });
+            status.innerText = `⚠️ Error for UID ${acc.uid}`;
+          }
+          await new Promise(r => setTimeout(r, 500));
+        }
+
+        const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = "ind_tokens.json";
+        a.click();
+        status.innerText = "✅ Done! ind_tokens.json downloaded.";
+      };
+
+      reader.readAsText(file);
     }
   </script>
 </body>
 </html>
+
