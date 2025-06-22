@@ -11,9 +11,10 @@
       text-align: center;
       padding: 20px;
     }
-    input[type="file"] {
+    input[type="file"], select {
       margin-top: 10px;
       margin-bottom: 20px;
+      padding: 5px;
     }
     button {
       padding: 10px 20px;
@@ -31,6 +32,13 @@
 </head>
 <body>
   <h2>📂 Upload UID/Password JSON → Get Token JSON</h2>
+  <select id="regionSelect">
+    <option value="">Select Region</option>
+    <option value="IND">India (IND)</option>
+    <option value="NA">North America (NA)</option>
+    <option value="RU">Russia (RU)</option>
+  </select>
+  <br>
   <input type="file" id="jsonFile" accept=".json" />
   <br>
   <button onclick="handleFile()">Generate & Download</button>
@@ -39,10 +47,16 @@
   <script>
     async function handleFile() {
       const fileInput = document.getElementById('jsonFile');
+      const regionSelect = document.getElementById('regionSelect');
       const status = document.getElementById('status');
 
       if (!fileInput.files.length) {
         status.innerText = '❌ Please upload a JSON file.';
+        return;
+      }
+
+      if (!regionSelect.value) {
+        status.innerText = '❌ Please select a region.';
         return;
       }
 
@@ -62,30 +76,58 @@
         const results = [];
 
         for (const acc of accounts) {
+          // Validate input JSON has required fields
+          if (!acc.uid || !acc.password || !acc.region) {
+            console.log(`UID: ${acc.uid || 'undefined'}, Password: ${acc.password || 'undefined'} - Missing required fields (uid, password, or region)`);
+            continue;
+          }
+
+          // Check input region
+          if (acc.region !== regionSelect.value) {
+            console.log(`UID: ${acc.uid}, Password: ${acc.password} - Input region (${acc.region}) does not match selected region (${regionSelect.value})`);
+            continue;
+          }
+
           const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
           try {
             const res = await fetch(url);
             const data = await res.json();
-            if (data.token) {
-              results.push({ token: data.token });
+            if (data.token && data.region === regionSelect.value) {
+              results.push({ 
+                token: data.token,
+                uid: acc.uid,
+                region: data.region,
+                server_url: data.server_url || acc.server_url || 'unknown'
+              });
               status.innerText = `✅ Token fetched for UID ${acc.uid}`;
             } else {
-              results.push({ token: null });
+              if (data.region !== regionSelect.value) {
+                console.log(`UID: ${acc.uid} - API response region (${data.region}) does not match selected region (${regionSelect.value})`);
+              } else {
+                console.log(`UID: ${acc.uid} - No token received from API`);
+              }
+              results.push({ token: null, uid: acc.uid });
               status.innerText = `⚠️ Failed for UID ${acc.uid}`;
             }
           } catch (e) {
-            results.push({ token: null });
+            console.log(`UID: ${acc.uid} - API error: ${e.message}`);
+            results.push({ token: null, uid: acc.uid });
             status.innerText = `⚠️ Error for UID ${acc.uid}`;
           }
           await new Promise(r => setTimeout(r, 500));
         }
 
+        if (results.length === 0) {
+          status.innerText = '❌ No valid tokens generated.';
+          return;
+        }
+
         const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = "ind_tokens.json";
+        a.download = `ind_tokens_${regionSelect.value}.json`;
         a.click();
-        status.innerText = "✅ Done! ind_tokens.json downloaded.";
+        status.innerText = `✅ Done! ind_tokens_${regionSelect.value}.json downloaded.`;
       };
 
       reader.readAsText(file);
@@ -93,4 +135,3 @@
   </script>
 </body>
 </html>
-
