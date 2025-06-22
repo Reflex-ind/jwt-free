@@ -60,18 +60,10 @@
       color: #ddd;
       flex-grow: 1;
     }
-    .console-error {
-      color: #ff5555;
-    }
-    .console-warning {
-      color: #ffaa55;
-    }
-    .console-success {
-      color: #55ff55;
-    }
-    .console-info {
-      color: #55aaff;
-    }
+    .console-error { color: #ff5555; }
+    .console-warning { color: #ffaa55; }
+    .console-success { color: #55ff55; }
+    .console-info { color: #55aaff; }
   </style>
 </head>
 <body>
@@ -141,63 +133,51 @@
         const results = [];
 
         for (const acc of accounts) {
-          // Validate input JSON has required fields
           const missingFields = [];
           if (!acc.uid) missingFields.push('uid');
           if (!acc.password) missingFields.push('password');
 
           if (missingFields.length > 0) {
-            logToConsole(`UID: ${acc.uid || 'undefined'}, Password: ${acc.password || 'undefined'} - Missing fields: ${missingFields.join(', ')}. JSON: ${JSON.stringify(acc)}`, 'error');
+            logToConsole(`Missing fields for UID ${acc.uid || 'undefined'}: ${missingFields.join(', ')}`, 'error');
             continue;
           }
 
           const url = `https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`;
           try {
             const res = await fetch(url);
-            if (!res.ok) {
-              throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             const data = await res.json();
+
             if (data.token && data.region === regionSelect.value) {
-              results.push({ 
-                token: data.token,
-                uid: acc.uid,
-                region: data.region,
-                server_url: data.server_url || 'unknown'
-              });
+              results.push({ token: data.token });  // ✅ push as object
               status.innerText = `✅ Token fetched for UID ${acc.uid}`;
               logToConsole(`Token fetched for UID ${acc.uid}`, 'success');
             } else {
-              if (data.region !== regionSelect.value) {
-                logToConsole(`UID: ${acc.uid} - API region (${data.region || 'undefined'}) does not match selected region (${regionSelect.value})`, 'warning');
-              } else {
-                logToConsole(`UID: ${acc.uid} - No token received. API response: ${JSON.stringify(data)}`, 'warning');
-              }
-              results.push({ token: null, uid: acc.uid });
+              logToConsole(`UID ${acc.uid} - Token fetch failed or region mismatch.`, 'warning');
               status.innerText = `⚠️ Failed for UID ${acc.uid}`;
             }
           } catch (e) {
-            logToConsole(`UID: ${acc.uid} - API error: ${e.message}. URL: ${url}`, 'error');
-            results.push({ token: null, uid: acc.uid });
+            logToConsole(`UID: ${acc.uid} - API error: ${e.message}`, 'error');
             status.innerText = `⚠️ Error for UID ${acc.uid}`;
           }
-          await new Promise(r => setTimeout(r, 500));
+
+          await new Promise(r => setTimeout(r, 500)); // throttle requests
         }
 
-        if (results.length === 0 || results.every(r => !r.token)) {
+        if (results.length === 0) {
           status.innerText = '❌ No valid tokens generated.';
           logToConsole('No valid tokens generated.', 'error');
           return;
         }
 
-        const validResults = results.filter(r => r.token);
-        const blob = new Blob([JSON.stringify(validResults, null, 2)], { type: "application/json" });
+        const blob = new Blob([JSON.stringify(results, null, 2)], { type: "application/json" });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `ind_tokens_${regionSelect.value}.json`;
+        a.download = `tokens_${regionSelect.value}.json`;
         a.click();
-        status.innerText = `✅ Done! ind_tokens_${regionSelect.value}.json downloaded.`;
-        logToConsole(`Downloaded ind_tokens_${regionSelect.value}.json with ${validResults.length} tokens.`, 'success');
+
+        status.innerText = `✅ Done! tokens_${regionSelect.value}.json downloaded.`;
+        logToConsole(`Downloaded tokens_${regionSelect.value}.json with ${results.length} tokens.`, 'success');
       };
 
       reader.readAsText(file);
@@ -205,6 +185,4 @@
   </script>
 </body>
 </html>
-  </script>
-</body>
-</html>
+
