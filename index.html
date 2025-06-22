@@ -88,6 +88,7 @@
     button {
       width: 100%;
       padding: 1rem;
+      margin-bottom: 0.8rem;
       background: linear-gradient(90deg, var(--primary), var(--secondary));
       border: none;
       border-radius: 12px;
@@ -144,6 +145,7 @@
     </select>
     <input type="file" id="fileInput" accept=".json">
     <button onclick="generateTokens()">🚀 Generate Tokens</button>
+    <button onclick="downloadRegionWise()">📁 Download Region-wise JSONs</button>
     <div id="status">Waiting for upload...</div>
     <div class="console" id="console"></div>
   </div>
@@ -216,6 +218,71 @@
 
       status.textContent = `✅ ${results.length} tokens downloaded.`;
       log("Download complete.", 'success');
+    }
+
+    async function downloadRegionWise() {
+      const file = document.getElementById('fileInput').files[0];
+      const status = document.getElementById('status');
+      const consoleBox = document.getElementById('console');
+      consoleBox.innerHTML = "";
+
+      if (!file) return status.textContent = "❌ Please select a JSON file.";
+
+      let accounts;
+      try {
+        accounts = JSON.parse(await file.text());
+        if (!Array.isArray(accounts)) throw new Error('Expected array');
+        log(`Parsed ${accounts.length} accounts`, 'success');
+      } catch (e) {
+        status.textContent = "❌ Invalid JSON format.";
+        log("JSON Error: " + e.message, 'error');
+        return;
+      }
+
+      status.textContent = "⚙️ Generating tokens for all regions...";
+      const SUPPORTED_REGIONS = ["IND", "BR", "SG", "RU", "ID", "TW", "US", "VN", "TH", "ME", "PK", "CIS", "BD", "NA", "SAC", "EU"];
+      const regionMap = {};
+
+      for (const acc of accounts) {
+        if (!acc.uid || !acc.password) {
+          log(`Skipping invalid entry: ${JSON.stringify(acc)}`, 'error');
+          continue;
+        }
+
+        try {
+          const res = await fetch(`https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`);
+          const data = await res.json();
+
+          if (data.token && SUPPORTED_REGIONS.includes(data.region)) {
+            if (!regionMap[data.region]) regionMap[data.region] = [];
+            regionMap[data.region].push({ token: data.token });
+            log(`✔ Token OK for UID ${acc.uid} [${data.region}]`, 'success');
+          } else {
+            log(`✖ No token or unsupported region for UID ${acc.uid}`, 'error');
+          }
+        } catch (e) {
+          log(`API error for ${acc.uid}: ${e.message}`, 'error');
+        }
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+      if (!Object.keys(regionMap).length) {
+        status.textContent = "❌ No tokens to export.";
+        log("No tokens collected.", 'error');
+        return;
+      }
+
+      for (const region of Object.keys(regionMap)) {
+        const blob = new Blob([JSON.stringify(regionMap[region], null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${region.toLowerCase()}_tokens.json`;
+        a.click();
+        log(`⬇ Downloaded ${regionMap[region].length} tokens for ${region}`, 'info');
+      }
+
+      status.textContent = `✅ Downloaded ${Object.keys(regionMap).length} region JSON files.`;
+      log("All region-wise files downloaded.", 'success');
     }
   </script>
 </body>
