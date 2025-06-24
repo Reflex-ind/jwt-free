@@ -91,7 +91,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    select, input[type="file"], button {
+    select, input[type="file"], input[type="text"], button {
       width: 100%;
       padding: 1rem;
       margin-bottom: 1rem;
@@ -105,7 +105,7 @@
       appearance: none;
     }
 
-    select:hover, input[type="file"]:hover, button:hover {
+    select:hover, input[type="file"]:hover, input[type="text"]:hover, button:hover {
       background-color: var(--combo-hover);
     }
 
@@ -163,6 +163,13 @@
 
     <div class="tab-content" id="tab-validate">
       <h2>🔍 Token Validator</h2>
+      <input type="text" id="validateUid" placeholder="Enter UID to verify (e.g. 5193358199)">
+      <select id="validateRegion">
+        <option value="">🌍 Select Region</option>
+        <option value="IND">India</option>
+        <option value="NA">North America</option>
+        <option value="RU">Russia</option>
+      </select>
       <input type="file" id="tokenFile" accept=".json">
       <button onclick="checkTokens()">Check Tokens</button>
       <div id="status2">Upload your token list...</div>
@@ -257,14 +264,25 @@
       const input = document.getElementById("tokenFile");
       const status = document.getElementById("status2");
       const logBox = document.getElementById("console2");
+      const uid = document.getElementById("validateUid").value.trim();
+      const region = document.getElementById("validateRegion").value.trim();
       logBox.innerHTML = "";
-      if (!input.files.length) return status.textContent = "❌ Upload token file.";
+
+      if (!uid || !region) {
+        status.textContent = "❌ Enter UID and select Region.";
+        return;
+      }
+
+      if (!input.files.length) {
+        status.textContent = "❌ Upload token file.";
+        return;
+      }
 
       let tokens = [];
       try {
         tokens = JSON.parse(await input.files[0].text());
-        if (!Array.isArray(tokens)) throw new Error("Invalid JSON");
-        log(`Checking ${tokens.length} tokens`, "info", "console2");
+        if (!Array.isArray(tokens)) throw new Error("Invalid JSON format");
+        log(`Checking ${tokens.length} tokens against UID ${uid} and region ${region}`, "info", "console2");
       } catch (err) {
         status.textContent = "❌ JSON parse error";
         log(err.message, "error", "console2");
@@ -277,17 +295,17 @@
         if (!t.token || typeof t.token !== "string") continue;
 
         try {
-          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=IND&key=gamerzmgr`);
+          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=${uid}&token=${t.token}&region=${region}&key=gamerzmgr`);
           const data = await res.json();
 
-          if (data?.basicInfo?.accountId === "5193358199") {
+          if (data?.basicInfo?.accountId === uid) {
             valid.push({ token: t.token });
-            log(`✔ Token valid for UID`, "success", "console2");
+            log(`✔ Token valid for UID ${uid}`, "success", "console2");
           } else {
-            log(`✖ Invalid token for UID`, "error", "console2");
+            log(`✖ Invalid token for UID ${uid}`, "error", "console2");
           }
         } catch (err) {
-          log("⚠️ Error checking token: " + err.message, "error", "console2");
+          log("⚠️ API error: " + err.message, "error", "console2");
         }
 
         await new Promise(r => setTimeout(r, 300));
