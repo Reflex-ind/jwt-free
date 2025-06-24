@@ -276,21 +276,15 @@
       for (const t of tokens) {
         if (!t.token || typeof t.token !== "string") continue;
 
-        let uid = "";
         try {
-          const payloadBase64 = t.token.split('.')[1];
-          const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
-          uid = decodedPayload.uid || decodedPayload.accountId || decodedPayload.user || "unknown";
-          const region = decodedPayload.region || decodedPayload.lock_region || "IND";
-
-          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=${region}`);
+          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=IND`);
           const data = await res.json();
 
-          if (data?.basicInfo?.accountId === uid) {
+          if (data?.basicInfo?.accountId === "5193358199") {
             valid.push({ token: t.token });
-            log(`✔ Token valid for UID ${uid}`, "success", "console2");
+            log(`✔ Token valid for UID`, "success", "console2");
           } else {
-            log(`✖ Invalid token for UID ${uid}`, "error", "console2");
+            log(`✖ Invalid token for UID`, "error", "console2");
           }
         } catch (err) {
           log("⚠️ Error checking token: " + err.message, "error", "console2");
