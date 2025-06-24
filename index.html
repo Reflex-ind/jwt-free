@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NextGen Token UI</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #00ffc3;
       --secondary: #006eff;
-      --background: #090e1a;
+      --background: #0d1222;
       --card-bg: rgba(255, 255, 255, 0.06);
       --blur-bg: rgba(255, 255, 255, 0.09);
       --border: rgba(255, 255, 255, 0.2);
@@ -38,31 +38,60 @@
 
     .glass-card {
       width: 100%;
-      max-width: 620px;
-      padding: 3rem;
+      max-width: 700px;
+      padding: 2rem;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      backdrop-filter: blur(20px);
       border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 255, 196, 0.08);
-      animation: slideUpFade 0.7s ease-out;
+      backdrop-filter: blur(20px);
     }
 
-    @keyframes slideUpFade {
-      from { opacity: 0; transform: translateY(40px); }
+    .tab-header {
+      display: flex;
+      margin-bottom: 2rem;
+      gap: 10px;
+    }
+
+    .tab-header button {
+      flex: 1;
+      padding: 1rem;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      background: var(--combo-bg);
+      color: white;
+    }
+
+    .tab-header button.active {
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: black;
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    h1 {
-      font-size: 30px;
+    h2 {
       text-align: center;
-      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to right, #00ffc3, #006eff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 2rem;
     }
 
-    select, input[type="file"] {
+    select, input[type="file"], button {
       width: 100%;
       padding: 1rem;
       margin-bottom: 1rem;
@@ -76,57 +105,33 @@
       appearance: none;
     }
 
-    select option {
-      background: var(--combo-bg);
-      color: var(--text-color);
-    }
-
-    select:hover, input[type="file"]:hover {
+    select:hover, input[type="file"]:hover, button:hover {
       background-color: var(--combo-hover);
     }
 
     button {
-      width: 100%;
-      padding: 1rem;
-      margin-bottom: 0.8rem;
       background: linear-gradient(90deg, var(--primary), var(--secondary));
       border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: bold;
       color: black;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      font-weight: bold;
     }
 
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px var(--primary);
-    }
-
-    #status {
-      margin-top: 1.2rem;
-      font-size: 14px;
+    #status1, #status2 {
       text-align: center;
+      margin-top: 1rem;
+      font-size: 14px;
       color: var(--primary);
     }
 
     .console {
-      margin-top: 1.5rem;
-      padding: 1rem;
+      margin-top: 1rem;
       background: var(--blur-bg);
       border-radius: 12px;
-      height: 160px;
-      overflow-y: auto;
+      padding: 1rem;
       font-family: monospace;
       font-size: 13px;
-      color: #ccc;
-      animation: fadeInConsole 1s ease-in;
-    }
-
-    @keyframes fadeInConsole {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      height: 180px;
+      overflow-y: auto;
     }
 
     .success { color: #00ffb8; }
@@ -136,201 +141,167 @@
 </head>
 <body>
   <div class="glass-card">
-    <h1>🧊 Token Generator v2</h1>
-    <select id="region">
-      <option value="">🌍 Select Region</option>
-      <option value="IND">India</option>
-      <option value="NA">North America</option>
-      <option value="RU">Russia</option>
-    </select>
-    <input type="file" id="fileInput" accept=".json">
-    <button onclick="generateTokens()">🚀 Generate Tokens</button>
-    <button onclick="downloadRegionWise()">📁 Download Region-wise JSONs</button>
-    <button id="downloadValidAccounts" style="display: none;" onclick="downloadValid()">✅ Download Valid Accounts (UID+Pass)</button>
-    <button id="downloadValidRegionAccounts" style="display: none;" onclick="downloadValidRegion()">🌐 Download Region Valid Accounts</button>
-    <div id="status">Waiting for upload...</div>
-    <div class="console" id="console"></div>
+    <div class="tab-header">
+      <button class="active" onclick="switchTab(0)">Generate</button>
+      <button onclick="switchTab(1)">Validate</button>
+    </div>
+
+    <div class="tab-content active" id="tab-generate">
+      <h2>🚀 Token Generator</h2>
+      <select id="region">
+        <option value="">🌍 Select Region</option>
+        <option value="IND">India</option>
+        <option value="NA">North America</option>
+        <option value="RU">Russia</option>
+      </select>
+      <input type="file" id="fileInput" accept=".json">
+      <button onclick="generateTokens()">Generate Tokens</button>
+      <button onclick="downloadValid()">Download Valid Accounts</button>
+      <div id="status1">Waiting for upload...</div>
+      <div class="console" id="console1"></div>
+    </div>
+
+    <div class="tab-content" id="tab-validate">
+      <h2>🔍 Token Validator</h2>
+      <input type="file" id="tokenFile" accept=".json">
+      <button onclick="checkTokens()">Check Tokens</button>
+      <div id="status2">Upload your token list...</div>
+      <div class="console" id="console2"></div>
+    </div>
   </div>
 
   <script>
-    let validAccounts = [];
-    let validAccountsRegionMap = {};
+    function switchTab(index) {
+      document.querySelectorAll(".tab-header button").forEach((btn, i) => {
+        btn.classList.toggle("active", i === index);
+      });
+      document.querySelectorAll(".tab-content").forEach((tab, i) => {
+        tab.classList.toggle("active", i === index);
+      });
+    }
 
-    function log(msg, type = 'info') {
-      const el = document.createElement('div');
+    let validAccounts = [];
+
+    function log(msg, type, id) {
+      const el = document.createElement("div");
       el.className = type;
       el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      document.getElementById('console').appendChild(el);
+      document.getElementById(id).appendChild(el);
     }
 
     async function generateTokens() {
-      const region = document.getElementById('region').value;
-      const file = document.getElementById('fileInput').files[0];
-      const status = document.getElementById('status');
-      const consoleBox = document.getElementById('console');
+      const region = document.getElementById("region").value;
+      const file = document.getElementById("fileInput").files[0];
+      const status = document.getElementById("status1");
+      const consoleBox = document.getElementById("console1");
       consoleBox.innerHTML = "";
-      document.getElementById('downloadValidAccounts').style.display = 'none';
+      validAccounts = [];
 
-      if (!file) return status.textContent = "❌ Please select a JSON file.";
-      if (!region) return status.textContent = "❌ Please choose a region.";
+      if (!file) return status.textContent = "❌ Select JSON file";
+      if (!region) return status.textContent = "❌ Select region";
 
       let accounts;
       try {
         accounts = JSON.parse(await file.text());
-        if (!Array.isArray(accounts)) throw new Error('Expected array');
-        log(`Parsed ${accounts.length} accounts`, 'success');
+        if (!Array.isArray(accounts)) throw new Error("Expected array");
+        log(`Parsed ${accounts.length} accounts`, "success", "console1");
       } catch (e) {
-        status.textContent = "❌ Invalid JSON format.";
-        log("JSON Error: " + e.message, 'error');
+        status.textContent = "❌ Invalid JSON";
+        log("JSON Error: " + e.message, "error", "console1");
         return;
       }
 
-      status.textContent = "⚙️ Generating tokens...";
+      status.textContent = "Generating tokens...";
       const results = [];
-      validAccounts = [];
 
       for (const acc of accounts) {
-        if (!acc.uid || !acc.password) {
-          log(`Skipping invalid entry: ${JSON.stringify(acc)}`, 'error');
-          continue;
-        }
-
+        if (!acc.uid || !acc.password) continue;
         try {
           const res = await fetch(`https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`);
           const data = await res.json();
-
           if (data.token && data.region === region) {
             results.push({ token: data.token });
             validAccounts.push({ uid: acc.uid, password: acc.password });
-            log(`✔ Token OK for UID ${acc.uid}`, 'success');
+            log(`✔ Token OK for UID ${acc.uid}`, "success", "console1");
           } else {
-            log(`✖ No token or wrong region for UID ${acc.uid}`, 'error');
+            log(`✖ Token Failed UID ${acc.uid}`, "error", "console1");
           }
-        } catch (e) {
-          log(`API error for ${acc.uid}: ${e.message}`, 'error');
+        } catch (err) {
+          log(`API error for ${acc.uid}: ${err.message}`, "error", "console1");
         }
         await new Promise(r => setTimeout(r, 300));
       }
 
-      if (!results.length) {
-        status.textContent = "❌ No tokens generated.";
-        log("No tokens to export.", 'error');
-        return;
-      }
-
-      const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `tokens_${region}.json`;
-      a.click();
-
-      status.textContent = `✅ ${results.length} tokens downloaded.`;
-      log("Download complete.", 'success');
-      document.getElementById('downloadValidAccounts').style.display = 'block';
-    }
-
-    async function downloadRegionWise() {
-      const file = document.getElementById('fileInput').files[0];
-      const status = document.getElementById('status');
-      const consoleBox = document.getElementById('console');
-      consoleBox.innerHTML = "";
-      document.getElementById('downloadValidRegionAccounts').style.display = 'none';
-
-      if (!file) return status.textContent = "❌ Please select a JSON file.";
-
-      let accounts;
-      try {
-        accounts = JSON.parse(await file.text());
-        if (!Array.isArray(accounts)) throw new Error('Expected array');
-        log(`Parsed ${accounts.length} accounts`, 'success');
-      } catch (e) {
-        status.textContent = "❌ Invalid JSON format.";
-        log("JSON Error: " + e.message, 'error');
-        return;
-      }
-
-      status.textContent = "⚙️ Generating tokens for all regions...";
-      const SUPPORTED_REGIONS = ["IND", "BR", "SG", "RU", "ID", "TW", "US", "VN", "TH", "ME", "PK", "CIS", "BD", "NA", "SAC", "EU"];
-      const regionMap = {};
-      validAccountsRegionMap = {};
-
-      for (const acc of accounts) {
-        if (!acc.uid || !acc.password) {
-          log(`Skipping invalid entry: ${JSON.stringify(acc)}`, 'error');
-          continue;
-        }
-
-        try {
-          const res = await fetch(`https://nation-jwt-api.vercel.app/token?uid=${acc.uid}&password=${acc.password}&key=gamerzmgr`);
-          const data = await res.json();
-
-          if (data.token && SUPPORTED_REGIONS.includes(data.region)) {
-            if (!regionMap[data.region]) regionMap[data.region] = [];
-            if (!validAccountsRegionMap[data.region]) validAccountsRegionMap[data.region] = [];
-
-            regionMap[data.region].push({ token: data.token });
-            validAccountsRegionMap[data.region].push({ uid: acc.uid, password: acc.password });
-
-            log(`✔ Token OK for UID ${acc.uid} [${data.region}]`, 'success');
-          } else {
-            log(`✖ No token or unsupported region for UID ${acc.uid}`, 'error');
-          }
-        } catch (e) {
-          log(`API error for ${acc.uid}: ${e.message}`, 'error');
-        }
-        await new Promise(r => setTimeout(r, 300));
-      }
-
-      if (!Object.keys(regionMap).length) {
-        status.textContent = "❌ No tokens to export.";
-        log("No tokens collected.", 'error');
-        return;
-      }
-
-      for (const region of Object.keys(regionMap)) {
-        const blob = new Blob([JSON.stringify(regionMap[region], null, 2)], { type: 'application/json' });
+      if (results.length) {
+        const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${region.toLowerCase()}_tokens.json`;
+        a.download = `tokens_${region}.json`;
         a.click();
-        log(`⬇ Downloaded ${regionMap[region].length} tokens for ${region}`, 'info');
+        status.textContent = `✅ ${results.length} tokens downloaded.`;
+      } else {
+        status.textContent = "❌ No tokens generated.";
       }
-
-      status.textContent = `✅ Downloaded ${Object.keys(regionMap).length} region JSON files.`;
-      log("All region-wise files downloaded.", 'success');
-      document.getElementById('downloadValidRegionAccounts').style.display = 'block';
     }
 
     function downloadValid() {
-      if (!validAccounts.length) {
-        log("No valid accounts to download.", 'error');
-        return;
-      }
-
+      if (!validAccounts.length) return alert("No valid accounts!");
       const blob = new Blob([JSON.stringify(validAccounts, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `valid_accounts.json`;
       a.click();
-      log("Downloaded valid accounts JSON.", 'success');
     }
 
-    function downloadValidRegion() {
-      if (!Object.keys(validAccountsRegionMap).length) {
-        log("No valid region accounts to download.", 'error');
+    async function checkTokens() {
+      const input = document.getElementById("tokenFile");
+      const status = document.getElementById("status2");
+      const logBox = document.getElementById("console2");
+      logBox.innerHTML = "";
+      if (!input.files.length) return status.textContent = "❌ Upload token file.";
+
+      let tokens = [];
+      try {
+        tokens = JSON.parse(await input.files[0].text());
+        if (!Array.isArray(tokens)) throw new Error("Invalid JSON");
+        log(`Checking ${tokens.length} tokens`, "info", "console2");
+      } catch (err) {
+        status.textContent = "❌ JSON parse error";
+        log(err.message, "error", "console2");
         return;
       }
 
-      for (const region of Object.keys(validAccountsRegionMap)) {
-        const blob = new Blob([JSON.stringify(validAccountsRegionMap[region], null, 2)], { type: 'application/json' });
+      const valid = [];
+      for (const t of tokens) {
+        if (!t.token) continue;
+        try {
+          const res = await fetch(`https://nation-jwt-api.vercel.app/token/check?token=${t.token}`);
+          const data = await res.json();
+          if (data.valid === true) {
+            valid.push({ token: t.token });
+            log(`✔ Valid token: ${t.token.slice(0, 20)}...`, "success", "console2");
+          } else {
+            log(`✖ Invalid token: ${t.token.slice(0, 20)}...`, "error", "console2");
+          }
+        } catch (err) {
+          log("API error: " + err.message, "error", "console2");
+        }
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+      if (valid.length) {
+        const blob = new Blob([JSON.stringify(valid, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${region.toLowerCase()}_valid_accounts.json`;
+        a.download = `valid_tokens.json`;
         a.click();
-        log(`⬇ Downloaded valid accounts for ${region}`, 'info');
+        status.textContent = `✅ ${valid.length} valid tokens saved.`;
+      } else {
+        status.textContent = "❌ No valid tokens.";
       }
     }
   </script>
 </body>
 </html>
+
 
