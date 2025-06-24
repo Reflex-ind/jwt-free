@@ -272,28 +272,31 @@
       }
 
       const valid = [];
-      const now = Math.floor(Date.now() / 1000);
 
       for (const t of tokens) {
         if (!t.token || typeof t.token !== "string") continue;
+
+        let uid = "";
         try {
           const payloadBase64 = t.token.split('.')[1];
           const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
-          const exp = decodedPayload.exp;
-          const region = decodedPayload.lock_region || decodedPayload.region || "N/A";
+          uid = decodedPayload.uid || decodedPayload.accountId || decodedPayload.user || "unknown";
+          const region = decodedPayload.region || decodedPayload.lock_region || "IND";
 
-          if (exp && exp > now) {
+          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=${uid}&token=${t.token}&region=${region}`);
+          const data = await res.json();
+
+          if (data?.basicInfo?.accountId === uid) {
             valid.push({ token: t.token });
-            const time = new Date(exp * 1000).toLocaleString();
-            log(`✔ Valid until ${time} | Region: ${region}`, "success", "console2");
+            log(`✔ Token valid for UID ${uid}`, "success", "console2");
           } else {
-            log(`✖ Expired token | Region: ${region}`, "error", "console2");
+            log(`✖ Invalid token for UID ${uid}`, "error", "console2");
           }
         } catch (err) {
-          log("⚠️ Decode error: " + err.message, "error", "console2");
+          log("⚠️ Error checking token: " + err.message, "error", "console2");
         }
 
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 300));
       }
 
       if (valid.length) {
