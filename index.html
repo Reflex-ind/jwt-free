@@ -277,7 +277,7 @@
         if (!t.token || typeof t.token !== "string") continue;
 
         try {
-          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=IND`);
+          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=IND&key=gamerzmgr`);
           const data = await res.json();
 
           if (data?.basicInfo?.accountId === "5193358199") {
