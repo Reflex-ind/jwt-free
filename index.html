@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NextGen Token UI</title>
+  <title>NextGen Token Tool</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -38,7 +38,7 @@
 
     .glass-card {
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       padding: 2rem;
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -272,21 +272,28 @@
       }
 
       const valid = [];
+      const now = Math.floor(Date.now() / 1000);
+
       for (const t of tokens) {
-        if (!t.token) continue;
+        if (!t.token || typeof t.token !== "string") continue;
         try {
-          const res = await fetch(`https://nation-jwt-api.vercel.app/token/check?token=${t.token}`);
-          const data = await res.json();
-          if (data.valid === true) {
+          const payloadBase64 = t.token.split('.')[1];
+          const decodedPayload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+          const exp = decodedPayload.exp;
+          const region = decodedPayload.lock_region || decodedPayload.region || "N/A";
+
+          if (exp && exp > now) {
             valid.push({ token: t.token });
-            log(`✔ Valid token: ${t.token.slice(0, 20)}...`, "success", "console2");
+            const time = new Date(exp * 1000).toLocaleString();
+            log(`✔ Valid until ${time} | Region: ${region}`, "success", "console2");
           } else {
-            log(`✖ Invalid token: ${t.token.slice(0, 20)}...`, "error", "console2");
+            log(`✖ Expired token | Region: ${region}`, "error", "console2");
           }
         } catch (err) {
-          log("API error: " + err.message, "error", "console2");
+          log("⚠️ Decode error: " + err.message, "error", "console2");
         }
-        await new Promise(r => setTimeout(r, 300));
+
+        await new Promise(r => setTimeout(r, 100));
       }
 
       if (valid.length) {
@@ -303,5 +310,3 @@
   </script>
 </body>
 </html>
-
-
