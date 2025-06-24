@@ -283,7 +283,7 @@
           uid = decodedPayload.uid || decodedPayload.accountId || decodedPayload.user || "unknown";
           const region = decodedPayload.region || decodedPayload.lock_region || "IND";
 
-          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=${uid}&token=${t.token}&region=${region}`);
+          const res = await fetch(`https://nation-jwt-api.vercel.app/check-token?uid=5193358199&token=${t.token}&region=${region}`);
           const data = await res.json();
 
           if (data?.basicInfo?.accountId === uid) {
